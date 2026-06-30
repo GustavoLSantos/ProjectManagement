@@ -26,7 +26,7 @@ async function bootstrap() {
   app.enableCors({
   origin: [
     'http://localhost:5173',
-    'https://project-management-git-main-gustavolsantos-projects.vercel.app/',
+    /https:\/\/.*\.vercel\.app$/,
   ],
 });
   await app.listen(process.env.PORT ?? 3000);
