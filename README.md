@@ -144,3 +144,19 @@ npm run test
 ```
 
 Testes dos componentes React com Vitest e Testing Library, cobrindo `ProjectForm` (validações), `ProjectsListPage` (estados de loading, vazio e erro) e `ProjectDetailModal` (ações de status e análise de IA).
+
+## Principais Decisões técnicas
+
+**PostgreSQL + Supabase** como banco de dados, pela compatibilidade direta com o ambiente de deploy e suporte a tipos como `numeric` e `enum` sem adaptações.
+
+**BDD nos testes de backend** — o enunciado descrevia as regras em formato de critérios de aceitação, então os testes foram escritos em `describe`/`it` em português, espelhando diretamente as regras de negócio.
+
+**Instanciação direta nos testes** em vez de `Test.createTestingModule()` do NestJS — mais simples e sem overhead de container IoC para testes puros de lógica de negócio.
+
+**Groq (llama-3.1-8b-instant)** como provider de IA, por oferecer free tier funcional com baixa latência e output estruturado em JSON. A integração foi feita de forma real, sem mock.
+
+**Separação do módulo de IA em três classes** — `ProjectAnalysisPromptBuilder`, `AiClient` e `AiAnalysisService` — seguindo responsabilidade única e facilitando testes e troca de provider.
+
+**CSS nativo com variáveis CSS** em vez de biblioteca de UI, para manter controle total sobre o design system sem dependências pesadas.
+
+**Vercel + Railway + Supabase** como stack de deploy, aproveitando os free tiers de cada serviço em sua camada de especialidade.
