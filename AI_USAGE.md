@@ -14,13 +14,17 @@ A IA foi utilizada em todas as fases de implementação, com graus variados de s
 
 **Fase 2 — Regras de negócio (`ProjectsService`):** implementação das regras de cálculo de risco, validação de transições de status e restrição de exclusão. Esta foi a fase de maior supervisão: cada regra foi comparada ponto a ponto com o enunciado antes de ser aceita.
 
-**Fase 3 — Testes unitários BDD:** geração do arquivo `projects.service.spec.ts` com estrutura de `describe`/`it` em português, mock completo do `ProjectRepository` e 19 cenários cobrindo as três seções de regras de negócio.
+**Fase 3 — Testes unitários BDD (backend):** geração do arquivo `projects.service.spec.ts` com estrutura de `describe`/`it` em português, mock completo do `ProjectRepository` e 19 cenários cobrindo as três seções de regras de negócio.
 
 **Fase 4 — Camada de serviço do frontend:** tipos TypeScript (`project.ts`), instância axios com interceptor de erros (`api.ts`) e funções tipadas do serviço de projetos (`projectsService.ts`).
 
 **Fase 5 — Componentes React:** `StatusBadge`, `RiskBadge`, `ProjectsListPage` (com tabela, estados de loading/vazio/erro e exclusão), `ProjectForm` (criação e edição com validações client-side) e `ProjectDetailModal` (ações de status e análise de IA).
 
 **Fase 6 — Módulo de IA:** implementação do `AiModule` com `AiAnalysisService`, `AiClient` (integração com Groq via SDK) e `ProjectAnalysisPromptBuilder`. O prompt solicita à IA um JSON estruturado com `summary`, `attentionPoints` e `executiveRecommendation` com base nos dados do projeto.
+
+**Fase 7 — Testes de componentes React (frontend):** geração dos arquivos de teste com Vitest e Testing Library para `ProjectForm`, `ProjectsListPage` e `ProjectDetailModal`. Os testes foram criados para refletir o comportamento real dos componentes — quando havia divergência entre o teste gerado e o comportamento existente, o teste era ajustado, nunca o componente.
+
+**Fase 8 — Deploy:** configuração do deploy do frontend no Vercel e do backend no Railway, com banco de dados PostgreSQL no Supabase. A IA auxiliou no diagnóstico e resolução dos problemas encontrados durante o processo.
 
 ---
 
@@ -34,7 +38,7 @@ Os prompts abaixo descrevem o que foi pedido em cada fase. O texto exato pode va
 **[Fase 2 — Service com regras de negócio]**
 > Implementação do `ProjectsService` com: cálculo de risco baseado em orçamento e prazo (limites R$100k / R$500k e 3 / 6 meses), validação de transições de status via mapa de transições permitidas, e bloqueio de exclusão para projetos `Em andamento` ou `Encerrados`.
 
-**[Fase 3 — Testes BDD]**
+**[Fase 3 — Testes BDD backend]**
 > Criação de `projects.service.spec.ts` com Jest em estilo BDD, organizando os testes em `describe` aninhados em português, mockando o `ProjectRepository` inteiramente com `jest.fn()` e testando o `calculateRisk` privado indiretamente via `create()`.
 
 **[Fase 4 — Camada de serviço frontend]**
@@ -49,6 +53,9 @@ Os prompts abaixo descrevem o que foi pedido em cada fase. O texto exato pode va
 **[Fase 6 — Módulo de IA]**
 > Implementação do `AiModule` com separação em três classes: `ProjectAnalysisPromptBuilder` (monta o prompt com os dados do projeto), `AiClient` (chama a API do Groq via SDK e retorna o texto gerado) e `AiAnalysisService` (orquestra os dois, faz parse do JSON e lança `InternalServerErrorException` em caso de falha). Integração com o endpoint `GET /projects/:id/ai-analysis` no controller.
 
+**[Fase 7 — Testes de componentes React]**
+> Criação de testes com Vitest e @testing-library/react para `ProjectForm` (validações client-side), `ProjectsListPage` (estados de loading, vazio e erro, renderização da lista, exclusão) e `ProjectDetailModal` (renderização dos dados, visibilidade condicional dos botões de status e cancelamento, fluxo de análise de IA com loading e erro). Instrução explícita de que o código de produção não deveria ser alterado — qualquer divergência deveria ser resolvida ajustando o teste para refletir o comportamento real.
+
 ---
 
 ## O Que Foi Aceito, Ajustado ou Descartado
@@ -60,8 +67,14 @@ Os prompts abaixo descrevem o que foi pedido em cada fase. O texto exato pode va
 **Ajustes manuais necessários após geração:** quatro pontos não foram cobertos pela IA e precisaram de intervenção manual:
 - O `main.ts` foi gerado sem a configuração do Swagger — adicionado `DocumentBuilder` e `SwaggerModule.setup('api', app, document)` manualmente antes do `app.listen()`.
 - O `App.tsx` foi gerado com o template padrão do Vite, sem importar os componentes criados — substituído manualmente para renderizar a `ProjectsListPage` e integrar os modais.
-- O CORS não foi habilitado no `main.ts` — adicionado `app.enableCors({ origin: 'http://localhost:5173' })` manualmente para permitir requisições do frontend em desenvolvimento.
+- O CORS não foi habilitado no `main.ts` — adicionado `app.enableCors()` manualmente, com origins expandidas durante o deploy para cobrir o domínio de produção do Vercel e previews de branch.
 - O `index.html` estava com título `"frontend"` e favicon padrão do Vite — corrigidos manualmente para `"ProjectManagement"` e favicon customizado.
+
+**Ajustes durante o deploy:**
+- A connection string do Supabase usava conexão direta (IPv6 por padrão), incompatível com o Railway que opera em IPv4. Resolvido trocando para o modo **Session pooler** do Supabase, que roteia via IPv4.
+- O build do Vercel falhou com `TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled` — corrigido desabilitando `erasableSyntaxOnly` no `tsconfig.app.json`.
+- A `VITE_API_URL` foi configurada sem o protocolo `https://`, fazendo o axios tratar a URL como caminho relativo — corrigido adicionando o protocolo completo na variável de ambiente do Vercel.
+- O CORS precisou ser expandido para aceitar subdomínios do Vercel via regex (`/https:\/\/.*\.vercel\.app$/`) pois os deploys de preview geram URLs dinâmicas diferentes da URL de produção.
 
 **Descartado:** uma sugestão inicial de usar `@nestjs/testing` e `Test.createTestingModule()` nos testes unitários foi descartada em favor de instanciação direta (`new ProjectsService(mockRepository)`) — mais simples, sem overhead de container IoC para testes puros de lógica de negócio.
 
@@ -71,9 +84,13 @@ Os prompts abaixo descrevem o que foi pedido em cada fase. O texto exato pode va
 
 **PostgreSQL + Supabase:** a escolha do banco foi definida antes de iniciar o desenvolvimento pela compatibilidade direta com Supabase para deploy sem adaptações.
 
-**BDD nos testes:** decisão tomada ao ler o enunciado, que descrevia as regras em formato de critérios de aceitação. Os prompts para os testes foram escritos com a estrutura BDD já especificada.
+**BDD nos testes de backend:** decisão tomada ao ler o enunciado, que descrevia as regras em formato de critérios de aceitação. Os prompts para os testes foram escritos com a estrutura BDD já especificada.
+
+**Testes de componentes React orientados ao comportamento real:** a instrução central passada à IA para os testes do frontend foi que o código de produção não deveria ser tocado — os testes deveriam se adaptar ao que o componente já fazia, não o contrário. Isso garantiu que os testes documentassem o comportamento existente em vez de forçar refatorações desnecessárias.
 
 **Groq (llama-3.1-8b-instant) como provider de IA:** a integração real com IA foi escolhida como diferencial em vez do mock. O Groq foi selecionado por oferecer um free tier funcional com latência baixa e API simples, adequada ao escopo da análise (dados de um único projeto, output de 3 campos estruturados). A troca do SDK Anthropic pelo Groq ocorreu após identificar que a conta Anthropic utilizada não possuía créditos disponíveis — decisão pragmática para manter a integração real sem comprometer o prazo.
+
+**Deploy Frontend (Vercel) + Backend (Railway) + Banco (Supabase):** arquitetura de deploy escolhida pela disponibilidade de free tiers funcionais em cada camada. O Supabase ficou com o banco, o Railway com o backend NestJS e o Vercel com o frontend React — cada serviço no que faz melhor.
 
 **Estrutura de camadas do frontend:** a separação em `types/`, `services/` e `components/` foi definida antes de gerar qualquer código frontend, garantindo que os tipos fossem a fonte de verdade compartilhada entre serviço e componentes.
 
@@ -82,7 +99,5 @@ Os prompts abaixo descrevem o que foi pedido em cada fase. O texto exato pode va
 ---
 
 ## Limitações da Entrega
-
-**Sem testes no frontend:** os componentes React não possuem testes automatizados. Seriam necessários `@testing-library/react` e mocks de `axios` para cobrir os fluxos de UI.
 
 **`synchronize: true`:** o schema do banco é sincronizado automaticamente a cada start. Adequado para avaliação, mas inadequado para produção — em um ambiente real seria substituído por migrations controladas.
