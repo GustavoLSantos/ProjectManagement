@@ -1,0 +1,123 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Field ───────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.required {
+  color: var(--c-red);
+  margin-left: 2px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: var(--sans);
+  color: var(--text-h);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.inputError { border-color: var(--c-red) !important; }
+.inputError:focus { box-shadow: 0 0 0 3px var(--c-red-bg); }
+
+.textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.fieldError {
+  font-size: 12px;
+  color: var(--c-red);
+  margin: 0;
+}
+
+/* ── Two-column row ──────────────────────────── */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Submit error ────────────────────────────── */
+.submitError {
+  font-size: 13px;
+  color: var(--c-red);
+  padding: 8px 12px;
+  background: var(--c-red-bg);
+  border: 0.5px solid var(--c-red-border);
+  border-radius: var(--radius);
+  margin: 0;
+}
+
+/* ── Footer buttons ──────────────────────────── */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 120px;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.btnPrimary:hover   { background: var(--accent-hover); }
+.btnPrimary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btnGhost {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-h);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  transition: background 0.12s;
+}
+.btnGhost:hover { background: var(--bg-subtle); }
+
+.spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
